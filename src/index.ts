@@ -1,5 +1,8 @@
-import { LinkedInScraper } from "./scraper/linkedinScraper.js";
-import { ProfileCleaner } from "./services/cleanProfile.js";
+import * as dotenv from "dotenv";
+dotenv.config();
+import * as fs from "fs";
+import { LinkedInScraper } from "./scraper/linkedinScraper.ts";
+import { ProfileCleaner } from "./services/cleanProfile.ts";
 
 async function main() {
   const scraper = new LinkedInScraper();
@@ -7,10 +10,30 @@ async function main() {
 
   console.log("Starting LinkedIn Persona Scraper...");
 
-  // Example usage
-  // const rawProfile = await scraper.scrapeProfile("https://www.linkedin.com/in/some-profile");
-  // const cleanProfile = cleaner.clean(rawProfile);
-  // console.log(cleanProfile);
+  try {
+    // Login to LinkedIn
+    await scraper.login();
+
+    // Scrape a profile
+    const rawProfile = await scraper.scrapeProfile(
+      "https://www.linkedin.com/in/kuldeepk-pandit/",
+    );
+    console.log("Raw profile data:", JSON.stringify(rawProfile, null, 2));
+
+    const cleanProfile = cleaner.clean(rawProfile);
+    console.log("Clean profile data:", JSON.stringify(cleanProfile, null, 2));
+
+    // Save to file
+    fs.writeFileSync(
+      "scraped-profile.json",
+      JSON.stringify(cleanProfile, null, 2),
+    );
+    console.log(" Profile saved to scraped-profile.json");
+  } finally {
+    await scraper.close();
+  }
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error(err);
+});
