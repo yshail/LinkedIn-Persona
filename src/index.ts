@@ -18,10 +18,9 @@ async function main() {
     const rawProfile = await scraper.scrapeProfile(
       "https://www.linkedin.com/in/kuldeepk-pandit/",
     );
-    console.log("Raw profile data:", JSON.stringify(rawProfile, null, 2));
 
     const cleanProfile = cleaner.clean(rawProfile);
-    console.log("Clean profile data:", JSON.stringify(cleanProfile, null, 2));
+    console.log("Profile data:", JSON.stringify(cleanProfile, null, 2));
 
     // Save to file
     fs.writeFileSync(

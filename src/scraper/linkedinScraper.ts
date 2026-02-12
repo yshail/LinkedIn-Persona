@@ -1,4 +1,5 @@
 import { chromium, type Browser, type Page } from "playwright";
+import { scrapeProfileData } from "./components/profile.js";
 
 export class LinkedInScraper {
   private browser: Browser | null = null;
@@ -26,12 +27,12 @@ export class LinkedInScraper {
       waitUntil: "domcontentloaded",
     });
 
-    // Fill in the phone number / email field
+    // Fill in the phone number
     console.log("Entering phone number...");
     await this.page.waitForSelector("input#username", { state: "visible" });
     await this.page.fill("input#username", phone);
 
-    // Fill in the password field
+    // Fill in the password
     console.log("Entering password...");
     await this.page.waitForSelector("input#password", { state: "visible" });
     await this.page.fill("input#password", password);
@@ -64,42 +65,17 @@ export class LinkedInScraper {
       console.log(`Navigating to profile: ${url}`);
       await this.page!.goto(url, { waitUntil: "domcontentloaded" });
 
-      // Give the page some time to render dynamic content
+      // Waiting for profile to load
       await this.page!.waitForTimeout(5000);
 
-      // Take a screenshot for debugging
-      await this.page!.screenshot({
-        path: "debug-profile.png",
-        fullPage: false,
-      });
-      console.log("📸 Debug screenshot saved to debug-profile.png");
-
-      // Log the current URL to see if we were redirected
-      console.log(`Current URL: ${this.page!.url()}`);
-
       // Scrape basic profile data
-      // Note: Using a string expression because tsx injects __name helpers
-      // into arrow functions, which don't exist in the browser context
-      const profileData = await this.page!.evaluate(`
-        (() => {
-          const getText = (selector) => {
-            const el = document.querySelector(selector);
-            return el?.textContent?.trim() ?? "";
-          };
-          return {
-            name: getText("h1"),
-            headline: getText(".text-body-medium.break-words"),
-            location: getText(".text-body-small.inline.t-black--light.break-words"),
-            about: getText("#about ~ div .inline-show-more-text"),
-            connections: getText(".t-bold"),
-          };
-        })()
-      `);
 
-      console.log("✅ Profile scraped successfully!");
+      const profileData = await this.page!.evaluate(scrapeProfileData);
+
+      console.log("Profile scraped successfully!");
       return profileData;
     } catch (error) {
-      console.error("❌ Error during profile scraping:");
+      console.error("Error during profile scraping:");
     }
   }
 

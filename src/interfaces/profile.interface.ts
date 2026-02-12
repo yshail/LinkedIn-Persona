@@ -3,7 +3,7 @@ export interface LinkedInProfile {
   headline: string;
   location: string;
   about?: string;
-  experience: any[];
-  education: any[];
-  skills: string[];
+  experience?: any[];
+  education?: any[];
+  skills?: string[];
 }
