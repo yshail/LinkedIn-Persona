@@ -16,18 +16,28 @@ async function main() {
 
     // Scrape a profile
     const rawProfile = await scraper.scrapeProfile(
-      "https://www.linkedin.com/in/kuldeepk-pandit/",
+      "https://www.linkedin.com/in/garvit17/",
     );
 
     const cleanProfile = cleaner.clean(rawProfile);
     console.log("Profile data:", JSON.stringify(cleanProfile, null, 2));
 
-    // Save to file
+    // Save profile to file
     fs.writeFileSync(
       "scraped-profile.json",
       JSON.stringify(cleanProfile, null, 2),
     );
-    console.log(" Profile saved to scraped-profile.json");
+    console.log("✅ Profile saved to scraped-profile.json");
+
+    // Scrape recent activity posts
+    const postsData = await scraper.scrapeRecentPosts(
+      "https://www.linkedin.com/in/garvit17/",
+    );
+    console.log("Posts data:", JSON.stringify(postsData, null, 2));
+
+    // Save posts data to file
+    fs.writeFileSync("scraped-posts.json", JSON.stringify(postsData, null, 2));
+    console.log("✅ Posts data saved to scraped-posts.json");
   } finally {
     await scraper.close();
   }
