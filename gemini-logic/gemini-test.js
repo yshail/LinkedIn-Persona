@@ -1,13 +1,24 @@
-import { GoogleGenAI } from "@google/genai";
+import * as dotenv from "dotenv";
 
-const ai = new GoogleGenAI({});
-
-async function main() {
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: "Explain how AI works in a few words",
-  });
-  console.log(response.text);
+dotenv.config();
+const apiKey = process.env.GEMINI_API_KEY;
+const response = await fetch(
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [{ text: "Speed of Light is?" }],
+        },
+      ],
+    }),
+  },
+);
+const data = await response.json();
+if (!data.candidates?.length) {
+  throw new Error("No response from Gemini");
 }
-
-await main();
+const text = data.candidates[0].content.parts[0].text;
+console.log(text);

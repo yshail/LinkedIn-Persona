@@ -123,6 +123,7 @@ export async function analyzePersonality() {
     return analysis;
   } catch (error) {
     console.error("Error during personality analysis:", error);
+    console.log((error as Error).message);
     throw error;
   }
 }
