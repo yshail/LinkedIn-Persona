@@ -16,7 +16,7 @@ async function main() {
 
     // Scrape a profile
     const rawProfile = await scraper.scrapeProfile(
-      "https://www.linkedin.com/in/garvit17/",
+      "https://www.linkedin.com/in/yshail/",
     );
 
     const cleanProfile = cleaner.clean(rawProfile);
@@ -31,15 +31,30 @@ async function main() {
 
     // Scrape recent activity posts
     const postsData = await scraper.scrapeRecentPosts(
-      "https://www.linkedin.com/in/garvit17/",
+      "https://www.linkedin.com/in/yshail/",
     );
     console.log("Posts data:", JSON.stringify(postsData, null, 2));
 
     // Save posts data to file
     fs.writeFileSync("scraped-posts.json", JSON.stringify(postsData, null, 2));
     console.log("✅ Posts data saved to scraped-posts.json");
+  } catch (error) {
+    console.error("Scraping failed:", error);
+    throw error;
   } finally {
     await scraper.close();
+    console.log("Browser closed.");
+  }
+
+  // Perform Personality Analysis
+  try {
+    const { analyzePersonality } = await import("../gemini-logic/llm.ts");
+    await analyzePersonality();
+  } catch (llmError) {
+    console.error(
+      "Skipping personality analysis due to error (check API key):",
+      llmError,
+    );
   }
 }
 
