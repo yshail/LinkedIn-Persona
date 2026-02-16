@@ -4,9 +4,6 @@
 // ========================
 
 export interface LinkedInPost {
-  /** Activity URN — unique identifier for the post */
-  urn?: string | undefined;
-
   /** Author name */
   authorName?: string | undefined;
 

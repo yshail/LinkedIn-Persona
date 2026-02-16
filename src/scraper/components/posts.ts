@@ -89,16 +89,6 @@ export async function scrapeRecentPosts(page: Page): Promise<LinkedInPost[]> {
     try {
       const post = postContainers.nth(i);
 
-      // --- URN (unique post ID) ---
-      // The URN is on a parent div[data-urn]
-      const urnContainer = post.locator(
-        "xpath=ancestor-or-self::div[@data-urn]",
-      );
-      const urn =
-        (await urnContainer.count()) > 0
-          ? ((await urnContainer.first().getAttribute("data-urn")) ?? undefined)
-          : undefined;
-
       // --- Author Name ---
       const authorName = await safeText(
         post.locator(
@@ -145,7 +135,6 @@ export async function scrapeRecentPosts(page: Page): Promise<LinkedInPost[]> {
       const reposts = parseNumber(repostsText);
 
       posts.push({
-        urn,
         authorName,
         postedDaysAgo,
         content,
