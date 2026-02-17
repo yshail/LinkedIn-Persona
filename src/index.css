@@ -3,48 +3,36 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
-}
+  /* LinkedIn Dark Mode Palette */
+  --li-bg: #1b1f23;
+  --li-card: #1d2226;
+  --li-surface: #38434f;
+  --li-blue: #0a66c2;
+  --li-blue-light: #378fe9;
+  --li-text: #e8e8e8;
+  --li-text-muted: #8b8f94;
+  --li-border: #313740;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --background: var(--li-bg);
+  --foreground: var(--li-text);
+  --card: var(--li-card);
+  --card-foreground: var(--li-text);
+  --popover: var(--li-card);
+  --popover-foreground: var(--li-text);
+  --primary: var(--li-blue);
+  --primary-foreground: #ffffff;
+  --secondary: var(--li-surface);
+  --secondary-foreground: var(--li-text);
+  --muted: var(--li-surface);
+  --muted-foreground: var(--li-text-muted);
+  --accent: var(--li-surface);
+  --accent-foreground: var(--li-text);
+  --destructive: #cc3333;
+  --destructive-foreground: #ff6666;
+  --border: var(--li-border);
+  --input: var(--li-border);
+  --ring: var(--li-blue);
+  --radius: 0.5rem;
 }
 
 @theme inline {
@@ -78,6 +66,76 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
   }
+}
+
+/* Custom progress bar */
+[data-slot="progress-indicator"] {
+  background-color: var(--progress-color, #0a66c2) !important;
+}
+
+/* ─── Ambient motion ─── */
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(40px, -30px) scale(1.05); }
+  50% { transform: translate(-20px, 20px) scale(0.95); }
+  75% { transform: translate(30px, 40px) scale(1.02); }
+}
+
+@keyframes drift-reverse {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-30px, 40px) scale(0.97); }
+  50% { transform: translate(25px, -20px) scale(1.05); }
+  75% { transform: translate(-40px, -30px) scale(1); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.25; }
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  animation: drift 20s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ambient-orb-2 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  animation: drift-reverse 25s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ambient-loading .ambient-orb,
+.ambient-loading .ambient-orb-2 {
+  animation-duration: 6s;
+  filter: blur(80px);
+}
+
+.ambient-loading .ambient-orb-3 {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes brick-blink {
+  0%, 100% { color: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.008); }
+  50% { color: rgba(10, 102, 194, 0.3); border-color: rgba(10, 102, 194, 0.4); background-color: rgba(10, 102, 194, 0.05); }
+}
+
+@keyframes brick-blink-soft-3 {
+  0%, 100% { color: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.008); }
+  50% { color: rgba(55, 143, 233, 0.2); border-color: rgba(55, 143, 233, 0.2); background-color: rgba(55, 143, 233, 0.03); }
+}
+
+.animate-brick-blink {
+  animation: brick-blink 1.5s ease-in-out infinite;
+}
+
+.animate-brick-blink-3 {
+  animation: brick-blink-soft-3 1s ease-in-out 3;
 }
