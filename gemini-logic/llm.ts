@@ -7,57 +7,54 @@ dotenv.config();
 /**
  * OCEAN Model (Big Five) Personality Interface
  */
-interface OceanAnalysis {
-  title: string; // Creative archetype or title
-  openness: {
-    score: number; // 1-100
-    description: string;
-    evidence: string[];
-  };
-  conscientiousness: {
-    score: number;
-    description: string;
-    evidence: string[];
-  };
-  extraversion: {
-    score: number;
-    description: string;
-    evidence: string[];
-  };
-  agreeableness: {
-    score: number;
-    description: string;
-    evidence: string[];
-  };
-  neuroticism: {
-    score: number;
-    description: string;
-    evidence: string[];
-  };
+export interface OceanTrait {
+  score: number;
+  description: string;
+  evidence: string[];
+}
+
+export interface OceanAnalysis {
+  title: string;
+  openness: OceanTrait;
+  conscientiousness: OceanTrait;
+  extraversion: OceanTrait;
+  agreeableness: OceanTrait;
+  neuroticism: OceanTrait;
   overallPersonaSummary: string;
 }
 
-export async function analyzePersonality() {
+/**
+ * Analyze personality from profile and posts data.
+ * Can accept data directly (from API) or read from files (CLI mode).
+ */
+export async function analyzePersonality(
+  profileData?: unknown,
+  postsData?: unknown,
+): Promise<OceanAnalysis> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY not found in environment variables.");
   }
 
-  // Use the new GoogleGenAI SDK as per your successful test
   const ai = new GoogleGenAI({ apiKey });
 
-  // Load scraped data
-  const profilePath = "./scraped-profile.json";
-  const postsPath = "./scraped-posts.json";
+  // Use provided data or fall back to reading from files
+  let profile = profileData;
+  let posts = postsData;
 
-  if (!fs.existsSync(profilePath) || !fs.existsSync(postsPath)) {
-    throw new Error(
-      "Scraped data files not found. Please run the scraper first.",
-    );
+  if (!profile || !posts) {
+    const profilePath = "./scraped-profile.json";
+    const postsPath = "./scraped-posts.json";
+
+    if (!fs.existsSync(profilePath) || !fs.existsSync(postsPath)) {
+      throw new Error(
+        "Scraped data files not found. Please run the scraper first.",
+      );
+    }
+
+    profile = JSON.parse(fs.readFileSync(profilePath, "utf-8"));
+    posts = JSON.parse(fs.readFileSync(postsPath, "utf-8"));
   }
-
-  const profile = JSON.parse(fs.readFileSync(profilePath, "utf-8"));
-  const posts = JSON.parse(fs.readFileSync(postsPath, "utf-8"));
 
   const prompt = `
     Analyze the following LinkedIn profile and recent activity posts to create a detailed personality profile using the OCEAN (Big Five) model.
@@ -114,7 +111,7 @@ export async function analyzePersonality() {
 
     const analysis: OceanAnalysis = JSON.parse(responseText);
 
-    // Save the analysis
+    // Save the analysis to file
     const outputPath = "./personality-analysis.json";
     fs.writeFileSync(outputPath, JSON.stringify(analysis, null, 2));
 
