@@ -5,6 +5,8 @@
     "server": "npm run server --prefix Backend",
     "frontend": "npm run dev --prefix Frontend",
     "dev": "concurrently \"npm run server\" \"npm run frontend\"",
+    "build": "npm run build --prefix Frontend && npm run build --prefix Backend",
+    "start": "npm run start --prefix Backend",
     "install:all": "npm install --prefix Backend && npm install --prefix Frontend"
   },
   "devDependencies": {

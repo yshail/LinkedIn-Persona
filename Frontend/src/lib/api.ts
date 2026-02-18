@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { AnalysisResponse } from "../types";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000";
+const API_BASE = ""; // Relative paths for monolith deployment
 
 /**
  * Load existing results from disk (previously scraped data).

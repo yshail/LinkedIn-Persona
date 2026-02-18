@@ -9,8 +9,7 @@
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
     "target": "esnext",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
+    "noEmit": false,
     "allowJs": true,
     "types": [],
     // For nodejs:

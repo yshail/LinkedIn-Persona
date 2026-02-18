@@ -7,6 +7,12 @@ import { scrapeLinkedInProfile } from "./index.ts";
 import { analyzePersonality } from "../gemini-logic/llm.ts";
 import type { OceanAnalysis } from "../gemini-logic/llm.ts";
 
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -151,6 +157,20 @@ app.post("/api/analyze/:jobId", async (req, res) => {
 
     return res.status(500).json({ error: (error as Error).message });
   }
+});
+
+// ─── Serve Frontend Static Files ───
+const isProd = __dirname.includes("dist");
+const frontendDist = isProd
+  ? path.join(__dirname, "../../../Frontend/dist")
+  : path.join(__dirname, "../../Frontend/dist");
+
+app.use(express.static(frontendDist));
+
+// Fallback for SPA (React Router)
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api")) return; // Don't fallback for API routes
+  res.sendFile(path.join(frontendDist, "index.html"));
 });
 
 // ─── Start Server ───
