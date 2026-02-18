@@ -40,6 +40,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "tailwindcss": "^4.1.18",
     "vite": "^7.3.1"
   }

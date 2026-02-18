@@ -1,9 +1,10 @@
-import {
-  chromium,
-  type Browser,
-  type BrowserContext,
-  type Page,
-} from "playwright";
+import { type Browser, type BrowserContext, type Page } from "playwright";
+import { chromium as pwExtra } from "playwright-extra";
+import stealthPlugin from "puppeteer-extra-plugin-stealth";
+
+// Add stealth plugin to avoid bot detection
+pwExtra.use(stealthPlugin());
+
 import { scrapeProfileData } from "./components/profile.js";
 import { scrapeRecentPosts as scrapeRecentPostsData } from "./components/posts.js";
 import type { LinkedInPost } from "../interfaces/post.interface.js";
@@ -72,8 +73,15 @@ export class LinkedInScraper {
 
   //----> Launch browser with Session Cookie (li_at) ------
   private async launchWithCookie(): Promise<void> {
-    console.log("Launching browser with session cookie...");
-    this.browser = await chromium.launch({ headless: true });
+    const proxyUrl = process.env.PROXY_URL;
+    const launchOptions: any = { headless: true };
+    if (proxyUrl) {
+      console.log(`Using Proxy: ${proxyUrl}`);
+      launchOptions.proxy = { server: proxyUrl };
+    }
+
+    console.log("Launching browser (Stealth Mode) with session cookie...");
+    this.browser = await pwExtra.launch(launchOptions);
     this.context = await this.browser.newContext();
 
     // Add the li_at cookie
@@ -92,9 +100,16 @@ export class LinkedInScraper {
   //----> Launch browser with saved auth state (persistent context) ------
 
   private async launchWithSavedAuth(): Promise<void> {
-    console.log("Launching browser with saved auth state...");
+    const proxyUrl = process.env.PROXY_URL;
+    const launchOptions: any = { headless: true };
+    if (proxyUrl) {
+      console.log(`Using Proxy: ${proxyUrl}`);
+      launchOptions.proxy = { server: proxyUrl };
+    }
 
-    this.browser = await chromium.launch({ headless: true });
+    console.log("Launching browser (Stealth Mode) with saved auth state...");
+
+    this.browser = await pwExtra.launch(launchOptions);
     this.context = await this.browser.newContext({
       storageState: AUTH_FILE,
     });
@@ -155,8 +170,15 @@ export class LinkedInScraper {
       );
     }
 
-    console.log("Launching browser for fresh login...");
-    this.browser = await chromium.launch({ headless: true });
+    const proxyUrl = process.env.PROXY_URL;
+    const launchOptions: any = { headless: true };
+    if (proxyUrl) {
+      console.log(`Using Proxy: ${proxyUrl}`);
+      launchOptions.proxy = { server: proxyUrl };
+    }
+
+    console.log("Launching browser (Stealth Mode) for fresh login...");
+    this.browser = await pwExtra.launch(launchOptions);
     this.context = await this.browser.newContext();
     this.page = await this.context.newPage();
 
