@@ -168,7 +168,7 @@ const frontendDist = isProd
 app.use(express.static(frontendDist));
 
 // Fallback for SPA (React Router)
-app.get("*", (req, res) => {
+app.get("(.*)", (req, res) => {
   if (req.path.startsWith("/api")) return; // Don't fallback for API routes
   res.sendFile(path.join(frontendDist, "index.html"));
 });
