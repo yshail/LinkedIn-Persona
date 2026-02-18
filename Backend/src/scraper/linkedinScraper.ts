@@ -19,7 +19,30 @@ export class LinkedInScraper {
   //----> Ensure browser is ready (try saved auth first, then fresh login) ------
 
   async ensureLoggedIn(): Promise<void> {
-    // Try to restore session from saved auth
+    // 1. Try Cookie Auth first (Best for Cloud/Headless)
+    if (process.env.LINKEDIN_SESSION_COOKIE) {
+      console.log(
+        "Found LINKEDIN_SESSION_COOKIE in environment. Using cookie auth...",
+      );
+      try {
+        await this.launchWithCookie();
+        const isValid = await this.validateSession();
+        if (isValid) {
+          console.log("✅ Session validated with Cookie!");
+          return;
+        }
+        console.log("⚠️ Cookie session invalid or expired.");
+        await this.close();
+      } catch (error) {
+        console.log(
+          "⚠️ Failed to login with cookie:",
+          (error as Error).message,
+        );
+        await this.close();
+      }
+    }
+
+    // 2. Try to restore session from saved auth file
     if (fs.existsSync(AUTH_FILE)) {
       console.log("Found saved auth state. Trying to restore session...");
       try {
@@ -43,8 +66,27 @@ export class LinkedInScraper {
       console.log("No saved auth state found. Proceeding with fresh login...");
     }
 
-    // Fallback: fresh login
+    // 3. Fallback: fresh login
     await this.freshLogin();
+  }
+
+  //----> Launch browser with Session Cookie (li_at) ------
+  private async launchWithCookie(): Promise<void> {
+    console.log("Launching browser with session cookie...");
+    this.browser = await chromium.launch({ headless: true });
+    this.context = await this.browser.newContext();
+
+    // Add the li_at cookie
+    await this.context.addCookies([
+      {
+        name: "li_at",
+        value: process.env.LINKEDIN_SESSION_COOKIE!,
+        domain: ".linkedin.com",
+        path: "/",
+      },
+    ]);
+
+    this.page = await this.context.newPage();
   }
 
   //----> Launch browser with saved auth state (persistent context) ------
