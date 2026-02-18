@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+auth.json
+scraped-*.json
+personality-analysis.json
+.git
+.gitignore
+Dockerfile
