@@ -127,7 +127,7 @@ export async function scrapeProfileData(page: Page): Promise<LinkedInProfile> {
 
   const topCard = page.locator("main section").first();
 
-  const name = (await safeText(topCard.locator("h1"))) ?? "";
+  const name = (await safeText(topCard.locator("h1"))) ?? "LinkedIn User";
 
   const headline =
     (await safeText(topCard.locator(".text-body-medium.break-words"))) ?? "";
