@@ -52,7 +52,7 @@ export class LinkedInScraper {
   private async launchWithSavedAuth(): Promise<void> {
     console.log("Launching browser with saved auth state...");
 
-    this.browser = await chromium.launch({ headless: false });
+    this.browser = await chromium.launch({ headless: true });
     this.context = await this.browser.newContext({
       storageState: AUTH_FILE,
     });
@@ -114,7 +114,7 @@ export class LinkedInScraper {
     }
 
     console.log("Launching browser for fresh login...");
-    this.browser = await chromium.launch({ headless: false });
+    this.browser = await chromium.launch({ headless: true });
     this.context = await this.browser.newContext();
     this.page = await this.context.newPage();
 

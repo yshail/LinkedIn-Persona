@@ -1,0 +1,9 @@
+node_modules/
+.env
+auth.json
+.browser-data/
+debug-profile.png
+error-profile.png
+error.txt
+scraped-profile.json
+output.log
