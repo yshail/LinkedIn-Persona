@@ -220,7 +220,8 @@ export class LinkedInScraper {
       console.log("Profile scraped successfully!");
       return profileData;
     } catch (error) {
-      console.error("Error during profile scraping:");
+      console.error("Error during profile scraping:", error);
+      throw error;
     }
   }
 
