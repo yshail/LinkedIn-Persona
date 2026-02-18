@@ -3,9 +3,9 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import { scrapeLinkedInProfile } from "./index.ts";
-import { analyzePersonality } from "../gemini-logic/llm.ts";
-import type { OceanAnalysis } from "../gemini-logic/llm.ts";
+import { scrapeLinkedInProfile } from "./index.js";
+import { analyzePersonality } from "../gemini-logic/llm.js";
+import type { OceanAnalysis } from "../gemini-logic/llm.js";
 
 import path from "path";
 import { fileURLToPath } from "url";

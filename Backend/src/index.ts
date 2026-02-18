@@ -1,8 +1,8 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 import * as fs from "fs";
-import { LinkedInScraper } from "./scraper/linkedinScraper.ts";
-import { ProfileCleaner } from "./services/cleanProfile.ts";
+import { LinkedInScraper } from "./scraper/linkedinScraper.js";
+import { ProfileCleaner } from "./services/cleanProfile.js";
 
 export type ProgressCallback = (message: string) => void;
 
@@ -54,7 +54,7 @@ async function main() {
 
   // Perform Personality Analysis
   try {
-    const { analyzePersonality } = await import("../gemini-logic/llm.ts");
+    const { analyzePersonality } = await import("../gemini-logic/llm.js");
     await analyzePersonality();
   } catch (llmError) {
     console.error(
