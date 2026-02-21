@@ -7,3 +7,6 @@ auth.json
 !package-lock.json
 !tsconfig.json
 !playwright.config.ts
+!scraped-profile.json
+!scraped-posts.json
+!personality-analysis.json

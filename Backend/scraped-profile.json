@@ -1,0 +1,49 @@
+{
+  "name": "Shailesh Yadav",
+  "headline": "DSA | MERN | Programmer @ Google Developer Student Clubs JSSATEN | Generative AI, Content Editing",
+  "location": "Noida, Uttar Pradesh, India",
+  "profilePictureUrl": "https://media.licdn.com/dms/image/v2/D5635AQGpGW0DQwaUzw/profile-framedphoto-shrink_200_200/B56Zvt8c2FIoAY-/0/1769223606306?e=1772258400&v=beta&t=rGYgBxEdX49Uy4qttDj3rFVgmphSCyuBPI9fESVDVUk",
+  "backgroundImageUrl": "https://media.licdn.com/dms/image/v2/D5616AQGe4ngNYUhggQ/profile-displaybackgroundimage-shrink_350_1400/B56ZvVZMDlKsAY-/0/1768811709325?e=1773273600&v=beta&t=qEoiEhNZdp3ZTvfvGmlA3Yd68x5NNTnHKTffTgTZTto",
+  "experience": [
+    {
+      "title": "Programmer",
+      "company": "Google Developer Student Clubs JSSATEN",
+      "companyUrl": "https://www.linkedin.com/company/14544329/",
+      "companyLogoUrl": "https://media.licdn.com/dms/image/v2/C4D0BAQFZw0DJUoFrbA/company-logo_100_100/company-logo_100_100/0/1651739907597/dsc_jssaten_logo?e=1773273600&v=beta&t=ysxwvQTshJokL1_9h_w5EMYGJSgPL2Tbdd0Cn87EDCA",
+      "employmentType": "Full-time",
+      "duration": "Jun 2023 - Present · 2 yrs 9 mos",
+      "location": "Noida, Uttar Pradesh, India · Hybrid"
+    },
+    {
+      "title": "Motion Graphics Designer",
+      "company": "Fiverr Pro",
+      "companyUrl": "https://www.linkedin.com/company/14802624/",
+      "companyLogoUrl": "https://media.licdn.com/dms/image/v2/D4E0BAQHbcunzQnTvJA/company-logo_100_100/company-logo_100_100/0/1719256584966/fiverrpro_logo?e=1773273600&v=beta&t=MfvRpVtJFLaPnx9SGNAr1Uvi0ttf1HDTLdxW9jTqxE4",
+      "employmentType": "Freelance",
+      "duration": "Aug 2018 - May 2025 · 6 yrs 10 mos",
+      "location": "Remote"
+    }
+  ],
+  "education": [
+    {
+      "school": "JSS ACADEMY OF TECHNICAL EDUCATION, NOIDA",
+      "schoolUrl": "https://www.linkedin.com/company/15118293/",
+      "schoolLogoUrl": "https://media.licdn.com/dms/image/v2/C560BAQFzWWb7UxXa8A/company-logo_100_100/company-logo_100_100/0/1630575794564/jss_academy_of_technical_education_noida_logo?e=1773273600&v=beta&t=pLOsVckJpQiF4uty-egtawwjofw14e7ndggucNxbrvA",
+      "degree": "Bachelor of Technology - BTech",
+      "fieldOfStudy": "Information Technology",
+      "duration": "Nov 2022 - Aug 2026"
+    },
+    {
+      "school": "Gayatri Public School - India",
+      "schoolUrl": "https://www.linkedin.com/company/7880702/"
+    }
+  ],
+  "skills": [
+    "Generative AI",
+    "Content Editing"
+  ],
+  "interests": [
+    "Satya Nadella",
+    "Mustafa Suleyman"
+  ]
+}
