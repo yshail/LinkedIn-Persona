@@ -1,8 +1,12 @@
 import { type Browser, type BrowserContext, type Page } from "playwright";
-import { chromium as pwExtra } from "playwright-extra";
-import stealthPlugin from "puppeteer-extra-plugin-stealth";
 
-// Add stealth plugin to avoid bot detection
+// 💡 Why "playwright-extra" instead of normal "playwright"?
+// Websites like LinkedIn actively block robots. "playwright-extra" allows us to add plugins.
+import { chromium as pwExtra } from "playwright-extra";
+
+// 💡 The Stealth Plugin
+// This plugin masks the browser so LinkedIn thinks it's a real human, not an automated script.
+import stealthPlugin from "puppeteer-extra-plugin-stealth";
 pwExtra.use(stealthPlugin());
 
 import { scrapeProfileData } from "./components/profile.js";
@@ -10,81 +14,85 @@ import { scrapeRecentPosts as scrapeRecentPostsData } from "./components/posts.j
 import type { LinkedInPost } from "../interfaces/post.interface.js";
 import * as fs from "fs";
 
+// We save our login session here so we don't have to log in every time (which can trigger security alerts).
 const AUTH_FILE = "auth.json";
 
+/**
+ * --------------------------------------------------------------------------
+ * LINKEDIN SCRAPER ENGINE
+ * --------------------------------------------------------------------------
+ * ❓ Why a Class?
+ * A Class lets us keep the Browser, Context, and Page "alive" and share them
+ * between different functions without constantly opening and closing Chrome.
+ */
 export class LinkedInScraper {
   private browser: Browser | null = null;
+
+  // 💡 Beginner Concept: Browser Context
+  // Think of a "Context" like a completely fresh, "Incognito" window. It holds our cookies and saved logins.
   private context: BrowserContext | null = null;
   private page: Page | null = null;
 
-  //----> Ensure browser is ready (try saved auth first, then fresh login) ------
-
+  /**
+   * ------------------------------------------------------------------------
+   * LOGIN STRATEGY (The Waterfall Approach)
+   * ------------------------------------------------------------------------
+   * 1. Check if we have a hardcoded Session Cookie (`li_at`) in .env. If yes, try it.
+   * 2. If it fails, check if we saved a session to `auth.json` previously. If yes, try it.
+   * 3. If both fail, actually type the email/password into the browser (Fresh Login).
+   */
   async ensureLoggedIn(): Promise<void> {
-    // 1. Try Cookie Auth first (Best for Cloud/Headless)
+    // --- Strategy 1: The Magic Cookie ---
     if (process.env.LINKEDIN_SESSION_COOKIE) {
-      console.log(
-        "Found LINKEDIN_SESSION_COOKIE in environment. Using cookie auth...",
-      );
+      console.log("Cookie found in .env! Attempting magic cookie login...");
       try {
         await this.launchWithCookie();
-        const isValid = await this.validateSession();
-        if (isValid) {
-          console.log("✅ Session validated with Cookie!");
-          return;
+        if (await this.validateSession()) {
+          console.log("✅ Cookie login successful!");
+          return; // Stop here! We are logged in.
         }
-        console.log("⚠️ Cookie session invalid or expired.");
-        await this.close();
+        await this.close(); // Cookie failed, close the browser before trying the next logic.
       } catch (error) {
-        console.log(
-          "⚠️ Failed to login with cookie:",
-          (error as Error).message,
-        );
+        console.log("⚠️ Cookie login failed:", (error as Error).message);
         await this.close();
       }
     }
 
-    // 2. Try to restore session from saved auth file
+    // --- Strategy 2: Saved 'auth.json' Session ---
     if (fs.existsSync(AUTH_FILE)) {
-      console.log("Found saved auth state. Trying to restore session...");
+      console.log(
+        "Found 'auth.json'. Attempting to restore previous session...",
+      );
       try {
         await this.launchWithSavedAuth();
-        const isValid = await this.validateSession();
-
-        if (isValid) {
-          console.log("✅ Session restored successfully from saved auth!");
-          return;
+        if (await this.validateSession()) {
+          console.log("✅ Restored session successfully!");
+          return; // Stop here! We are logged in.
         }
-
-        console.log(
-          "⚠️ Saved session is expired or invalid. Falling back to fresh login...",
-        );
-        await this.close();
+        await this.close(); // Saved auth failed
       } catch (error) {
         console.log("⚠️ Failed to restore session:", (error as Error).message);
         await this.close();
       }
-    } else {
-      console.log("No saved auth state found. Proceeding with fresh login...");
     }
 
-    // 3. Fallback: fresh login
+    // --- Strategy 3: The Hard Way (Fresh Login) ---
+    console.log(
+      "No valid saved sessions. Proceeding with fresh manual login...",
+    );
     await this.freshLogin();
   }
 
-  //----> Launch browser with Session Cookie (li_at) ------
-  private async launchWithCookie(): Promise<void> {
-    const proxyUrl = process.env.PROXY_URL;
-    const launchOptions: any = { headless: true };
-    if (proxyUrl) {
-      console.log(`Using Proxy: ${proxyUrl}`);
-      launchOptions.proxy = { server: proxyUrl };
-    }
+  // ------------------------- HELPER LOGIN FUNCTIONS -------------------------
 
-    console.log("Launching browser (Stealth Mode) with session cookie...");
+  /** Helper: Starts Chrome and manually injects the LinkedIn `li_at` tracking cookie. */
+  private async launchWithCookie(): Promise<void> {
+    const launchOptions: any = { headless: true }; // 💡 Headless = true means the browser runs invisibly.
+
     this.browser = await pwExtra.launch(launchOptions);
     this.context = await this.browser.newContext();
 
-    // Add the li_at cookie
+    // Inject the cookie directly into the browser's memory
     await this.context.addCookies([
       {
         name: "li_at",
@@ -97,69 +105,17 @@ export class LinkedInScraper {
     this.page = await this.context.newPage();
   }
 
-  //----> Launch browser with saved auth state (persistent context) ------
-
+  /** Helper: Starts Chrome and loads the `auth.json` file into the Context. */
   private async launchWithSavedAuth(): Promise<void> {
-    const proxyUrl = process.env.PROXY_URL;
     const launchOptions: any = { headless: true };
-    if (proxyUrl) {
-      console.log(`Using Proxy: ${proxyUrl}`);
-      launchOptions.proxy = { server: proxyUrl };
-    }
-
-    console.log("Launching browser (Stealth Mode) with saved auth state...");
-
     this.browser = await pwExtra.launch(launchOptions);
-    this.context = await this.browser.newContext({
-      storageState: AUTH_FILE,
-    });
 
+    // `storageState` tells Playwright to load our saved cookies!
+    this.context = await this.browser.newContext({ storageState: AUTH_FILE });
     this.page = await this.context.newPage();
   }
 
-  //----> Validate that the restored session is still active ------
-
-  private async validateSession(): Promise<boolean> {
-    try {
-      console.log("Validating session by navigating to LinkedIn feed...");
-      await this.page!.goto("https://www.linkedin.com/feed/", {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
-      });
-
-      // Wait a moment for any redirects
-      await this.page!.waitForTimeout(3000);
-
-      const currentUrl = this.page!.url();
-      console.log(`Current URL after navigation: ${currentUrl}`);
-
-      // If we're still on the feed or a profile page, session is valid
-      if (
-        currentUrl.includes("/feed") ||
-        currentUrl.includes("/in/") ||
-        currentUrl.includes("/mynetwork")
-      ) {
-        return true;
-      }
-
-      // If redirected to login page, session is invalid
-      if (
-        currentUrl.includes("/login") ||
-        currentUrl.includes("/authwall") ||
-        currentUrl.includes("/uas/login") ||
-        currentUrl.includes("/checkpoint")
-      ) {
-        return false;
-      }
-
-      return false;
-    } catch {
-      return false;
-    }
-  }
-
-  //----> Fresh login with credentials ------
-
+  /** Helper: The actual Email & Password login script. */
   private async freshLogin(): Promise<void> {
     const phone = process.env.LINKEDIN_PHONE;
     const password = process.env.LINKEDIN_PASSWORD;
@@ -170,111 +126,118 @@ export class LinkedInScraper {
       );
     }
 
-    const proxyUrl = process.env.PROXY_URL;
-    const launchOptions: any = { headless: true };
-    if (proxyUrl) {
-      console.log(`Using Proxy: ${proxyUrl}`);
-      launchOptions.proxy = { server: proxyUrl };
-    }
-
-    console.log("Launching browser (Stealth Mode) for fresh login...");
-    this.browser = await pwExtra.launch(launchOptions);
+    this.browser = await pwExtra.launch({ headless: true });
     this.context = await this.browser.newContext();
     this.page = await this.context.newPage();
 
-    // Navigate to LinkedIn sign-in page
     console.log("Navigating to LinkedIn sign-in page...");
-    await this.page!.goto("https://www.linkedin.com/login", {
+    await this.page.goto("https://www.linkedin.com/login", {
       waitUntil: "domcontentloaded",
     });
 
-    // Fill in the phone number
-    console.log("Entering phone number...");
-    await this.page!.waitForSelector("input#username", { state: "visible" });
-    await this.page!.fill("input#username", phone);
+    // 💡 Playwright Locators
+    // `waitForSelector` ensures the input box actually exists on the screen before typing.
+    console.log("Entering phone number and password...");
+    await this.page.waitForSelector("input#username", { state: "visible" });
+    await this.page.fill("input#username", phone);
+    await this.page.fill("input#password", password);
 
-    // Fill in the password
-    console.log("Entering password...");
-    await this.page!.waitForSelector("input#password", { state: "visible" });
-    await this.page!.fill("input#password", password);
-
-    // Click the Sign in button
     console.log("Clicking Sign in...");
-    await this.page!.click('button[type="submit"]');
+    await this.page.click('button[type="submit"]');
 
+    // Wait until the URL changes to the Feed (meaning we successfully bypassed the login page)
     console.log("Waiting for feed to load...");
-    await this.page!.waitForURL(
+    await this.page.waitForURL(
       (url) => url.pathname.includes("/feed") || url.pathname.includes("/in/"),
       { timeout: 120000 },
     );
 
     console.log("✅ Successfully signed into LinkedIn!");
 
-    // Save auth state for future sessions
-    await this.context!.storageState({ path: AUTH_FILE });
-    console.log("💾 Auth state saved for next session!");
+    // ✨ Magic: Save all the cookies we just got into a file so we don't have to do this again tomorrow!
+    await this.context.storageState({ path: AUTH_FILE });
+    console.log("💾 Auth state saved to auth.json!");
   }
 
-  //----> Legacy login method (calls ensureLoggedIn) ------
+  /** Helper: Checks if the browser is currently logged in or stuck on a login screen. */
+  private async validateSession(): Promise<boolean> {
+    try {
+      if (!this.page) return false;
 
+      console.log("Testing session by visiting the LinkedIn feed...");
+      // We go to the feed. If we aren't logged in, LinkedIn will forcefully redirect us to the login page.
+      await this.page.goto("https://www.linkedin.com/feed/", {
+        waitUntil: "domcontentloaded",
+        timeout: 30000,
+      });
+      await this.page.waitForTimeout(3000); // Wait 3 seconds to see if it redirects us
+
+      const currentUrl = this.page.url();
+
+      // If the URL still says "feed" or "in" (profile), we survived!
+      if (currentUrl.includes("/feed") || currentUrl.includes("/in/")) {
+        return true;
+      }
+
+      return false; // We got redirected to a login wall.
+    } catch {
+      return false; // If the page crashes or times out, assume session is bad.
+    }
+  }
+
+  // Legacy standard function
   async login(): Promise<void> {
     await this.ensureLoggedIn();
   }
 
-  //----> Scrape Profile ---------------------
+  /**
+   * ------------------------------------------------------------------------
+   * SCRAPING FUNCTIONS
+   * ------------------------------------------------------------------------
+   */
 
   async scrapeProfile(url: string) {
     if (!this.page || !this.context) {
+      // 💡 Beginner Mistake: Forgetting to log in before trying to scrape private data!
       await this.ensureLoggedIn();
     }
 
     try {
       console.log(`Navigating to profile: ${url}`);
       await this.page!.goto(url, { waitUntil: "domcontentloaded" });
+      await this.page!.waitForTimeout(5000); // 💡 Hard pause to let complex React apps (like LinkedIn) render HTML.
 
-      // Waiting for profile to load
-      await this.page!.waitForTimeout(5000);
-
-      // Scrape basic profile data using Playwright locators
-
+      // We separated the messy CSS query selectors into another file (`components/profile.ts`) to keep this file clean.
       const profileData = await scrapeProfileData(this.page!);
-
-      console.log("Profile scraped successfully!");
+      console.log("✅ Profile scraped successfully!");
       return profileData;
     } catch (error) {
-      console.error("Error during profile scraping:", error);
+      console.error("❌ Error during profile scraping:", error);
       throw error;
     }
   }
 
-  //----> Scrape Recent Activity Posts ---------------------
-
   async scrapeRecentPosts(url: string): Promise<LinkedInPost[]> {
-    if (!this.page || !this.context) {
-      await this.ensureLoggedIn();
-    }
+    if (!this.page || !this.context) await this.ensureLoggedIn();
 
     try {
       const activityUrl = `${url}recent-activity/all/`;
       console.log(`Navigating to recent activity: ${activityUrl}`);
       await this.page!.goto(activityUrl, { waitUntil: "domcontentloaded" });
-
-      // Waiting for activity feed to load
       await this.page!.waitForTimeout(5000);
 
-      // Scrape recent posts using Playwright locators
       const postsData = await scrapeRecentPostsData(this.page!);
-
-      console.log("Recent posts scraped successfully!");
+      console.log("✅ Recent posts scraped successfully!");
       return postsData;
     } catch (error) {
-      console.error("Error during recent posts scraping:", error);
-      return [];
+      console.error("❌ Error during recent posts scraping:", error);
+      return []; // Return empty array on failure instead of crashing the whole app
     }
   }
 
-  //----> Close Browser ---------------------
-
+  /**
+   * Clean up tool. Always run this when finished!
+   */
   async close(): Promise<void> {
     if (this.context) {
       await this.context.close();
@@ -285,6 +248,6 @@ export class LinkedInScraper {
       await this.browser.close();
       this.browser = null;
     }
-    console.log("Browser closed.");
+    console.log("Browser safely closed.");
   }
 }

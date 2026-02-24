@@ -11,42 +11,46 @@ import type {
 } from "../../interfaces/profile.interface.js";
 
 /**
- * Scrapes comprehensive profile data from a LinkedIn profile page
- * using Playwright locators.
+ * --------------------------------------------------------------------------
+ * LINKEDIN PROFILE SCRAPING ENGINE
+ * --------------------------------------------------------------------------
+ * ❓ Goal: Read the raw HTML of a LinkedIn page and turn it into a clean JSON object.
  *
- * Expects the page to already be navigated to a LinkedIn profile URL.
- *
- * @param page - Playwright Page instance
- * @returns Full profile data object
+ * 🛑 Beginner Warning: Web Scraping is Fragile!
+ * LinkedIn constantly changes their class names like `.pv-top-card` to `.sc-12xyz`.
+ * When scraping breaks, 90% of the time it is because LinkedIn changed their HTML classes.
  */
 export async function scrapeProfileData(page: Page): Promise<LinkedInProfile> {
   // ───────────────────────────────────────────────
-  //  Helpers
+  //  Helper Functions
   // ───────────────────────────────────────────────
 
-  /** Safely extract trimmed text from a locator. */
+  /**
+   * Helper: Safely grab text.
+   * If the element doesn't exist, it returns `undefined` instead of crashing.
+   */
   const safeText = async (
     locator: Locator,
     timeout = 2000,
   ): Promise<string | undefined> => {
     try {
-      const count = await locator.count();
-      if (count === 0) return undefined;
-      const text = (await locator.first().textContent({ timeout }))?.trim();
-      return text || undefined;
+      if ((await locator.count()) === 0) return undefined;
+      const text = await locator.first().textContent({ timeout });
+      return text?.trim() || undefined;
     } catch {
       return undefined;
     }
   };
 
-  /** Safely extract an attribute from a locator. */
+  /**
+   * Helper: Safely grab an HTML Attribute (e.g. `src` on an `img` tag)
+   */
   const safeAttr = async (
     locator: Locator,
     attr: string,
   ): Promise<string | undefined> => {
     try {
-      const count = await locator.count();
-      if (count === 0) return undefined;
+      if ((await locator.count()) === 0) return undefined;
       const v = await locator.first().getAttribute(attr, { timeout: 2000 });
       return v?.trim() || undefined;
     } catch {
@@ -55,9 +59,11 @@ export async function scrapeProfileData(page: Page): Promise<LinkedInProfile> {
   };
 
   /**
-   * Get the parent <section> for a profile anchor element.
-   * LinkedIn uses `<div id="experience" class="pv-profile-card__anchor">`
-   * inside a `<section>`.
+   * Helper: Find a Section parent container.
+   * 💡 Beginner Concept: XPath & Ancestors
+   * LinkedIn hides section IDs deep inside the HTML (e.g., `<div id="experience">`).
+   * But we want the ENTIRE `<section>` box that contains it.
+   * `xpath=ancestor::section[1]` translates to: "Go UP the family tree until you find the closest <section> tag."
    */
   const getSection = (anchorId: string): Locator => {
     return page
@@ -65,10 +71,7 @@ export async function scrapeProfileData(page: Page): Promise<LinkedInProfile> {
       .locator("xpath=ancestor::section[1]");
   };
 
-  /**
-   * Get all list items from a profile section.
-   * Each item uses `data-view-name="profile-component-entity"`.
-   */
+  /** Helper: Grab all list items (`<li>`) from a specific section. */
   const getSectionItems = (anchorId: string): Locator => {
     const section = getSection(anchorId);
     return section.locator(
@@ -77,12 +80,13 @@ export async function scrapeProfileData(page: Page): Promise<LinkedInProfile> {
   };
 
   /**
-   * Extract text lines from the standard profile entity layout.
-   * LinkedIn entities follow this pattern:
-   *   Line 1 (.t-bold span[aria-hidden])           → title / name
-   *   Line 2 (.t-normal:not(.t-black--light) span) → subtitle
-   *   Line 3 (.t-normal.t-black--light span)       → duration/date
-   *   Line 4 (second .t-black--light)              → location / extra
+   * --------------------------------------------------------------------------
+   * THE "ENTITY" TEXT EXTRACTOR
+   * --------------------------------------------------------------------------
+   * LinkedIn uses the exact same visual layout for Jobs, Schools, and Projects.
+   * Instead of writing the same scraping code 3 times, we write it once here!
+   * - Line 1 is always Bold (The Name/Title)
+   * - Line 2, 3, 4 are standard text (Dates, Locations)
    */
   const extractEntityTexts = async (
     entity: Locator,
